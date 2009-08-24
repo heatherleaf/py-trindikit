@@ -1,51 +1,145 @@
+# -*- encoding: utf-8 -*-
 
+# TODO: threading could be done with the modules: threading and/or Queue
+# OR: via send() and yield in a generator expression, see PEP 342:
+# http://www.python.org/dev/peps/pep-0342
 
+import inspect 
+import functools
+import pprint
+import collections
+
+######################################################################
 # Trindikit types
+######################################################################
 
-class Record(dict):
+class value(object):
+    """An object wrapper for non-object values, such as integers, 
+    strings, and finite data types.
+
+    This class is mainly used for non-objects which are stored as attributes
+    in a class, and which cannot be changed by assignment (because of 
+    scoping problems).
+    """
+    def __init__(self, *type_or_values):
+        if len(type_or_values) == 1 and isinstance(type_or_values[0], type):
+            self.type = type_or_values[0]
+            self.allowed_values = set()
+        else:
+            self.allowed_values = set(type_or_values)
+            self.type = None
+        self.value = None
+
+    def set(self, value):
+        """Set the value of the object. Raises a TypeError if the
+        new value is not among the allowed values.
+        """
+        if self.allowed_values and value not in self.allowed_values:
+            raise TypeError("%s is not among the allowed values: %s" %
+                            (value, self.allowed_values))
+        elif self.type and not isinstance(value, self.type):
+            raise TypeError("%s is not of type: %s" % (value, self.type))
+        self.value = value
+
+    def get(self):
+        """Get the value of the object.
+        """
+        return self.value
+
+    def clear(self):
+        """Remove the value of the object.
+        """
+        self.value = None
+
+    def equals(self, other):
+        """Test if the value is equal to another value.
+        """
+        return self.value == other
+
+    def __repr__(self):
+        if self.value:
+            return "<%s>" % self.value
+        else:
+            return "<>"
+
+class record(dict):
+    """A dictionary where the keys can be accessed as attributes:
+      * r.k <=> r['k']
+    Plus some convenience methods.
+    """
     def reset(self, *args, **kw):
+        """Set the value of the record rows to the given arguments. But 
+        without reassigning the record: First clear the record, then update.
+        """
         self.clear()
         self.update(*args, **kw)
-    
+
     def __getattr__(self, key):
         if key in self:
             return self[key]
         else:
             raise AttributeError(key)
-    
+
     def __setattr__(self, key, value):
         self[key] = value
-    
+
     def __delattr__(self, key):
         del self[key]
-    
-    def pprint(self, indent="", delta="    "):
+
+    def pprint(self, prefix="", indent="    "):
+        """Pretty-print a record.
+        """
+        print self.pformat(prefix, indent)
+
+    def pformat(self, prefix="", indent="    "):
+        """Pretty-format a record, i.e., return a string containing
+        a pretty-printed version
+        """
         result = ""
         for key, value in self.items():
             if result: result += "\n"
-            result += indent + key + ": "
-            if isinstance(value, Record):
-                result += "\n" + value.pprint(indent+delta, delta)
+            result += prefix + key + ": "
+            if isinstance(value, record):
+                result += "\n" + value.pformat(prefix+indent, indent)
             else:
                 result += str(value)
         return result
 
-class Stack(list):
+class binding(record):
+    """Synonym class for records. To be used in preconditions.
+    """
+
+class stack(list):
+    """A list with some convenience methods for using it as a stack.
+    """
     def push(self, value):
+        """Push a value onto the beginning of the stack. Synonym for
+        list.append().
+        """
         self.append(value)
-    
+
     def first(self):
-        return self[-1:]
-    
+        """Return the topmost element of the stack. If the stack is 
+        empty, raise StopIteration instead of IndexError. This means
+        that the method can be used in preconditions for update rules.
+        """
+        if len(self) == 0:
+            raise StopIteration
+        return self[-1]
+
     def clear(self):
+        """Clear the stack from all values. This is the same as deleting
+        all elements from the stack.
+        """
         del self[:]
 
-class Stackset(Stack):
+class stackset(stack):
+    """A stack which also can be used as a set. 
+    
+    No extra methods are defined currently, since lists contains all 
+    necessary methods.
+    """
     pass
-
-class Set(set):
-    pass
-
 
 # speakers
 
@@ -59,198 +153,272 @@ QUIT = "QUIT"
 
 # dialogue moves
 
-class Move: 
+class Move(object): 
+    """A base class for dialogue moves.
+    """
     def __repr__(self):
-        return self.__class__.__name__ + \
-            "(" + ", ".join(map(repr, self.__dict__.values())) + ")"
+        return self.__class__.__name__ + repr(self.__dict__)
 
-class Greet(Move): pass
+######################################################################
+# algorithm operators and decorators
+######################################################################
 
-class Quit(Move): pass
+class PreconditionFailure(Exception): 
+    """An exception used in preconditions in update rules.
+    This should always be caught by an update rule or algorithm,
+    if not, there is something wrong in the dialogue manager
+    implementation.
+    """
+    pass
 
-class Ask(Move):
-    def __init__(self, question):
-        self.question = question
+def do(*rules):
+    """Execute the first rule whose precondition matches. If no rule
+    matches, report a failure.
 
-class Answer(Move):
-    def __init__(self, answer):
-        self.answer = answer
-
-class Respond(Move):
-    def __init__(self, question):
-        self.question = question
-
-class ConsultDB(Move):
-    def __init__(self, question):
-        self.question = question
-
-class Findout(Move):
-    def __init__(self, question):
-        self.question = question
-
-class Raise(Move):
-    def __init__(self, question):
-        self.question = question
-
-
-
-# precondition checking
-
-# class Failure(Exception): 
-#     pass
-
-# def check(test):
-#     if not test:
-#         raise Failure
-# 
-# def some(iterable):
-#     for x in iterable:
-#         if x: return x
-#     raise Failure
-# 
-# def none(iterable):
-#     for x in iterable:
-#         if x: raise Failure
-#     return True
-# 
-# def forall(iterable):
-#     for x in iterable:
-#         if not x: raise Failure
-#     return True
-
-# algorithm operators
-
-def do(module):
-    module()
-
-def maybe(module):
-    module.maybe()
-
-def repeat(module):
-    module.repeat()
-
-# trindikit modules
-
-class Module:
-    def __init__(self, apply=None):
-        if apply:
-            self.apply = apply
-            if hasattr(apply, '__name__'):
-                self.__name__ = str(apply.__name__)
-
-    def __call__(self):
-        self.trace("Start")
-        self.apply()
-        self.trace("Finished")
-    
-    def maybe(self):
+    If the first argument is a DialogueManager instance, then that 
+    instance is applied to every rule. Otherwise the rules are applied
+    without arguments.
+    """
+    if isinstance(rules[0], DialogueManager):
+        rules = rules[1:]
+        self = rules[0]
+    else:
+        rules = rules
+        self = None
+    for rule in rules:
         try:
-            self.apply()
-        except StopIteration:
+            return rule(self) if self else rule()
+        except PreconditionFailure:
             pass
+    raise PreconditionFailure
+
+def maybe(*rules):
+    """Execute the first rule whose precondition matches. If no rule
+    matches, do *not* report a failure.
+
+    If the first argument is a DialogueManager instance, then that 
+    instance is applied to every rule. Otherwise the rules are applied
+    without arguments.
+    """
+    try:
+        return do(*rules)
+    except PreconditionFailure:
+        pass
+
+def repeat(*rules):
+    """Repeat executing the group of rules until there's no precondition
+    that matches. 
+
+    If the first argument is a DialogueManager instance, then that 
+    instance is applied to every rule. Otherwise the rules are applied
+    without arguments.
+    """
+    while True:
+        try:
+            do(*rules)
+        except PreconditionFailure:
+            break
+
+def update_group(*rules):
+    """Group together more than one update rule into a group. When executed, 
+    the rules are tried in order. The first one whose precondition matches
+    is executed, otherwise the group fails.
+    """
+    def group(self):
+        """Try the given rules in order. The first one whose precondition
+        matches is executed, otherwise the rule group fails.
+        """
+        return do(self, *rules)
+    group.__name__ = "<" + "|".join(rule.__name__ for rule in rules) + ">"
+    group.__doc__ = "Try the following update rules in order:\n" + \
+        ", ".join(rule.__name__ for rule in rules) + "\n" + \
+        "Execute the first whose precondition matches, otherwise report a failure.\n"
+    return group
+
+def update_rule(function):
+    """Turn a function into an update rule, which can be applied in two ways:
+      1. With named arguments - exactly those who are in the function's arg list.
+      2. With one single DialogueManager instance - the function is then called
+         with the attributes selected by the function's arg list.
+    """
+    argkeys, varargs, varkw, defaults = inspect.getargspec(function)
+    assert not varargs,  "@update_rule does not support a variable *args argument"
+    assert not varkw,    "@update_rule does not support a variable **kw argument"
+    assert not defaults, "@update_rule does not support default arguments"
+    funcname = function.__name__
+    callspec = ", ".join("%s=..." % arg for arg in argkeys)
     
-    def repeat(self):
-        while True:
-            try:
-                self.apply()
-            except StopIteration:
-                break
+    @functools.wraps(function)
+    def rule(*args, **kw):
+        new_kw = kw
+        if args:
+            assert (not kw and len(args) == 1 and 
+                    isinstance(args[0], DialogueManager)), \
+                    "Either call %s(%s), " % (funcname, callspec) + \
+                    "or %s(self) where self is a DialogueManager." % funcname
+            new_kw = dict((key, getattr(args[0], key, None)) for key in argkeys)
+        result = function(**new_kw)
+        print "...", funcname
+        print
+        return result
+    rule.__doc__ = "An update rule which can be called in two ways:\n" + \
+        "  1. %s(%s).\n" % (funcname, callspec) + \
+        "  2. %s(self), where self is a DialogueManager instance." % funcname
+    return rule
+
+def precondition(test):
+    """Call a generator function as a update precondition, return the first
+    yielded result. 
     
+    If there are no results, i.e. if the function raises a StopIteration 
+    exception, raise a PreconditionFailure instead. Failures can then be 
+    caught by the functions: do, maybe and repeat.
+    """
+    try:
+        result = test().next()
+        print "   ", result
+        return result
+    except StopIteration:
+        raise PreconditionFailure
+
+######################################################################
+# trindikit dialogue manager
+######################################################################
+
+class DialogueManager(object):
+    """Abstract base class for all Dialogue Managers.
+    Subclasses need to implement at least:
+      * self.reset() for resetting the infostate variables
+      * self.control() for starting the control algorithm
+    """
+
     def trace(self, message, *args):
-        print "{" + str(self) + ": " + (message % tuple(args)) + "}"
-    
-    def set_name(self, name):
-        if name:
-            self.__name__ = str(name)
-    
+        print "{" + (message % tuple(args)) + "}"
+
     def __repr__(self):
-        return getattr(self, '__name__', self.__class__.__name__)
+        return "<%s>" % self.__class__.__name__
 
-class Rule(Module):
-    def __init__(self, name=None, precond=None, effect=None):
-        self.set_name(name)
-        self.set_precond(precond)
-        self.set_effect(effect)
-    
-    def apply(self):
-        bindings = self.apply_precond().next()
-        self.apply_effect(bindings)
-    
-    def apply_precond(self):
-        for bindings in self.precond() or ():
-            self.trace("YIELD %s", bindings)
-            yield bindings
-    
-    def apply_effect(self, bindings):
-        self.trace("APPLY %s", bindings)
-        if isinstance(bindings, tuple):
-            self.effect(*bindings)
-        else:
-            self.effect(bindings)
-    
-    def _check_name(self, precond_or_effect, method):
-        method_name = getattr(method, '__name__', None)
-        if method_name and method_name not in (precond_or_effect, '_', '<lambda>'):
-            self_name = getattr(self, '__name__', None)
-            if self_name:
-                if method_name != self_name:
-                    raise NameError("The given %s should have the same name as "
-                                    "the update rule itself" % precond_or_effect)
-            else:
-                self.__name__ = method_name
-    
-    def set_precond(self, precond):
-        if precond:
-            self.precond = precond
-            self._check_name("precond", precond)
-        else:
-            self.precond = lambda: iter([()])
-    
-    def set_effect(self, effect):
-        if effect:
-            self.effect = effect
-            self._check_name("effect", effect)
-        else:
-            self.effect = lambda: ()
-    
-    # TODO: create a subclass RuleGroup, which is created by __or__
-    def __or__(self, other):
-        return RuleGroup(self) | other
+    def run(self):
+        """Convenience method which first calls self.reset()
+        and then self.control().
+        """
+        self.reset()
+        self.control()
 
-class RuleGroup(Rule):
-    def __init__(self, *rules):
-        rules = list(rules)
-        if len(rules) >= 1 and isinstance(rules[0], basestring):
-            self.set_name(rules.pop(0))
-        self.rules = rules
+    def reset(self):
+        """Reset the information state.
+        """
+        raise NotImplementedError
+
+    def control(self):
+        """The control algorithm.
+        """
+        raise NotImplementedError
+
+    def do(self, *rules):
+        """Convenience method:
+          self.do(*rules)  =>  do(self, *rules)
+        """
+        return do(self, *rules)
+
+    def maybe(self, *rules):
+        """Convenience method:
+          self.maybe(*rules)  =>  maybe(self, *rules)
+        """
+        return maybe(self, *rules)
+
+    def repeat(self, *rules):
+        """Convenience method:
+          self.repeat(*rules)  =>  repeat(self, *rules)
+        """
+        return repeat(self, *rules)
+
+######################################################################
+# the standard set of module interface variables
+######################################################################
+
+class StandardMIVS(object):
+    """The standard Module Interface Variables, as used by the 
+    IBIS and the GoDiS dialogue managers. The following MIVS are
+    defined (with their types):
+      * self.INPUT          : value of str
+      * self.LATEST_SPEAKER : value of SYS | USR
+      * self.LATEST_MOVES   : set of Move
+      * self.NEXT_MOVES     : set of Move
+      * self.OUTPUT         : value of str
+      * self.PROGRAM_STATE  : value of RUN | QUIT
+    """
+
+    def init_MIVS(self):
+        self.INPUT          = value(str)
+        self.LATEST_SPEAKER = value(SYS, USR)
+        self.LATEST_MOVES   = set()
+        self.NEXT_MOVES     = set()
+        self.OUTPUT         = value(str)
+        self.PROGRAM_STATE  = value(RUN, QUIT)
+        self.PROGRAM_STATE.set(RUN)
+
+    def print_MIVS(self, prefix=""):
+        print prefix + "INPUT:         ", self.INPUT
+        print prefix + "LATEST_SPEAKER:", self.LATEST_SPEAKER
+        print prefix + "LATEST_MOVES:  ", self.LATEST_MOVES
+        print prefix + "NEXT_MOVES:    ", self.NEXT_MOVES
+        print prefix + "OUTPUT:        ", self.OUTPUT
+        print prefix + "PROGRAM_STATE: ", self.PROGRAM_STATE
+
+######################################################################
+# naive generate and output modules
+######################################################################
+
+class SimpleOutput(object):
+    """Naive implementations of a generation module and an output module.
+    Apart from the standard MIVS, NEXT_MOVES, OUTPUT and LATEST_SPEAKER, 
+    a GRAMMAR is required with the method:
+      * GRAMMAR.generate(set of moves), returning a string.
     
-    def precond(self):
-        for rule in self.rules:
-            for bindings in rule.apply_precond():
-                yield rule, bindings
+    The output module prints the string to the standard output.
+    """
+
+    @update_rule
+    def generate(NEXT_MOVES, OUTPUT, GRAMMAR):
+        OUTPUT.set(GRAMMAR.generate(NEXT_MOVES))
+        NEXT_MOVES.clear()
+
+    @update_rule
+    def output(OUTPUT, LATEST_SPEAKER):
+        print
+        print "S>", OUTPUT.get() or "[---]"
+        print
+        LATEST_SPEAKER.set(SYS)
+
+######################################################################
+# naive interpret and input modules
+######################################################################
+
+class SimpleInput(object):
+    """Naive implementations of an input module and an interpretation module.
+    Apart from the standard MIVS, LATEST_MOVES, INPUT and LATEST_SPEAKER, 
+    a GRAMMAR is required with the method:
+      * GRAMMAR.interpret(string), returning a move or a sequence of moves.
     
-    def effect(self, rule, bindings):
-        rule.apply_effect(bindings)
-    
-    def __or__(self, other):
-        if isinstance(other, RuleGroup):
-            name = getattr(self, '__name__', getattr(other, '__name__', ""))
-            rules = self.rules + other.rules
-            return RuleGroup(name, *rules)
-        elif isinstance(other, Rule):
-            return self | RuleGroup(other)
+    The input module reads a string from the standard input.
+    """
+
+    @update_rule
+    def interpret(INPUT, LATEST_MOVES, GRAMMAR):
+        LATEST_MOVES.clear()
+        move_or_moves = GRAMMAR.interpret(INPUT.get())
+        if not move_or_moves:
+            print "Did not understand:", INPUT
+        elif isinstance(move_or_moves, Move):
+            LATEST_MOVES.add(move_or_moves)
         else:
-            raise TypeError("A Rule can only be combined with another Rule")
-    
-    def __repr__(self):
-        return getattr(self, '__name__', " | ".join(map(str, self.rules)))
+            LATEST_MOVES.update(move_or_moves)
 
-
-def update_rule(precond=None):
-    def set_effect(effect):
-        rule = Rule()
-        rule.set_precond(precond)
-        rule.set_effect(effect)
-        return rule
-    return set_effect
+    @update_rule
+    def input(INPUT, LATEST_SPEAKER):
+        print
+        INPUT.set(raw_input("U> "))
+        LATEST_SPEAKER.set(USR)
+        print
 

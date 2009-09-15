@@ -26,20 +26,27 @@ sorts = {'means': means,
 
 domain = Domain(preds0, preds1, sorts)
 
-whq = lambda pred: WHQ(Pred1(pred))
-ynq = lambda pred: YNQ(Prop(Pred0(pred)))
+domain.add_plan("?x.price(x)",
+                [Findout("?x.how(x)"),
+                 Findout("?x.dest_city(x)"),
+                 Findout("?x.depart_city(x)"),
+                 Findout("?x.depart_day(x)"),
+                 Findout("?x.class(x)"),
+                 Findout("?return()"),
+                 If("?return()", 
+                    [Findout("?x.return_day(x)")]),
+                 ConsultDB("?x.price(x)")
+                 ])
 
-price_plan = Plan(p("?x.price(x)"),
-                  [Findout(p("?x.how(x)")),
-                   Findout(p("?x.dest_city(x)")),
-                   Findout(p("?x.depart_city(x)")),
-                   Findout(p("?x.depart_day(x)")),
-                   Findout(p("?x.class(x)")),
-                   Findout(p("?return")),
-                   If(p("?return"), 
-                      [Findout(p("?x.return_day(x)"))]),
-                   ConsultDB(p("?x.price(x)"))
-                   ])
+
+
+database = Database()
+
+grammar = Grammar()
+
+ibis = IBIS1(domain, database, grammar)
+
+
 
 
 # Följande måste klaras av såsmåningom:
@@ -64,37 +71,9 @@ price_plan = Plan(p("?x.price(x)"),
 #    If("change-contact-name(?x)", [assume_shared("view-contact-name(?x)"), ...])
 
 
-class DomainTravel(Domain):
-    def relevant(self, ans, que):
-        return NotImplemented
-    
-    def resolves(self, prop, que):
-        return NotImplemented
-    
-    def combine(self, que, ans):
-        return NotImplemented
-    
-    def get_plan(self, que):
-        return NotImplemented
-
-class DatabaseTravel(Database):
-    pass
-
-class GrammarTravelEnglish(Grammar):
-    pass
-
-
-
 ######################################################################
 # Running the dialogue system
 ######################################################################
 
-def run():
-    domain = DomainTravel()
-    database = DatabaseTravel()
-    grammar = GrammarTravelEnglish()
-    ibis = ibis.IBIS1(domain, database, grammar)
-    ibis.run()
-
 if __name__=='__main__':
-    run()
+    ibis.run()

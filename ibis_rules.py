@@ -33,7 +33,7 @@ def integrate_sys_ask(IS):
         if IS.shared.lu.speaker == Speaker.SYS:
             for move in IS.shared.lu.moves:
                 if isinstance(move, Ask):
-                    yield R(move=move, que=move.question)
+                    yield R(move=move, que=move.content)
     IS.shared.qud.push(V.que)
 
 @update_rule
@@ -48,7 +48,7 @@ def integrate_usr_ask(IS):
         if IS.shared.lu.speaker == Speaker.USR:
             for move in IS.shared.lu.moves:
                 if isinstance(move, Ask):
-                    yield R(move=move, que=move.question)
+                    yield R(move=move, que=move.content)
     IS.shared.qud.push(V.que)
     IS.private.agenda.push(Respond(V.que))
 
@@ -64,8 +64,8 @@ def integrate_answer(IS, DOMAIN):
         que = IS.shared.qud.top()
         for move in IS.shared.lu.moves:
             if isinstance(move, Answer):
-                if DOMAIN.relevant(move.answer, que):
-                    yield R(que=que, ans=move.answer)
+                if DOMAIN.relevant(move.content, que):
+                    yield R(que=que, ans=move.content)
     prop = DOMAIN.combine(V.que, V.ans)
     IS.shared.com.add(prop)
 
@@ -152,10 +152,10 @@ def find_plan(IS, DOMAIN):
     def V():
         move = IS.private.agenda.top()
         if isinstance(move, Respond):
-            resolved = any(DOMAIN.resolves(prop, move.question) 
+            resolved = any(DOMAIN.resolves(prop, move.content) 
                            for prop in IS.private.bel)
             if not resolved:
-                plan = DOMAIN.get_plan(move.question)
+                plan = DOMAIN.get_plan(move.content)
                 if plan:
                     yield R(move=move, plan=plan)
     IS.private.agenda.pop()
@@ -176,10 +176,13 @@ def execute_if(IS):
     def V():
         move = IS.private.plan.top()
         if isinstance(move, If):
-            if move.cond in (IS.private.bel | IS.shared.com):
-                yield R(test=move.cond, success=True, subplan=move.iftrue)
-            else:
-                yield R(test=move.cond, success=False, subplan=move.iffalse)
+            if isinstance(move.cond, YNQ):
+                if move.cond.content in (IS.private.bel | IS.shared.com):
+                    yield R(test=move.cond, success=True, subplan=move.iftrue)
+                else:
+                    yield R(test=move.cond, success=False, subplan=move.iffalse)
+    
+    IS.private.plan.pop()
     for move in reversed(V.subplan):
         IS.private.plan.push(move)
 
@@ -196,7 +199,7 @@ def remove_findout(IS, DOMAIN):
         move = IS.private.plan.top()
         if isinstance(move, Findout):
             for prop in IS.shared.com:
-                if DOMAIN.resolves(prop, move.question):
+                if DOMAIN.resolves(prop, move.content):
                     yield R(move=move, prop=prop)
     IS.private.plan.pop()
 
@@ -214,7 +217,7 @@ def exec_consultDB(IS, DATABASE):
         move = IS.private.plan.top()
         if isinstance(move, ConsultDB):
             yield R(move=move)
-    prop = DATABASE.consultDB(V.que, IS.shared.com)
+    prop = DATABASE.consultDB(V.move.content, IS.shared.com)
     IS.private.bel.add(prop)
     IS.private.plan.pop()
 
@@ -249,7 +252,7 @@ def remove_raise(IS, DOMAIN):
         move = IS.private.plan.top()
         if isinstance(move, Raise):
             for prop in IS.shared.com:
-                if DOMAIN.resolves(prop, move.question):
+                if DOMAIN.resolves(prop, move.content):
                     yield R(move=move, prop=prop)
     IS.private.plan.pop()
 
@@ -322,11 +325,12 @@ def select_ask(IS, NEXT_MOVES):
     def V():
         move = IS.private.agenda.top()
         if isinstance(move, Findout) or isinstance(move, Raise):
-            yield R(move=move, que=move.question)
+            yield R(move=move, que=move.content)
+
     NEXT_MOVES.add(Ask(V.que))
     if IS.private.plan:
         move = IS.private.plan.top()
-        if isinstance(move, Raise) and move.question == V.que:
+        if isinstance(move, Raise) and move.content == V.que:
             IS.private.plan.pop()
 
 @update_rule
@@ -337,27 +341,36 @@ def select_answer(IS, DOMAIN, NEXT_MOVES):
     is a relevant proposition in /private/bel which is not in
     /shared/com, add an Answer move to NEXT_MOVES.
     """
-    @precondition
-    def V():
-        move = IS.private.agenda.top()
-        if isinstance(move, Respond):
-            for prop in IS.private.bel:
-                if prop not in IS.shared.com:
-                    if DOMAIN.relevant(prop, move.question):
-                        yield R(prop=prop)
+    V = precondition(lambda: 
+                     (R(prop=prop)
+                      for move in [IS.private.agenda.top()]
+                      if isinstance(move, Respond)
+                      for prop in IS.private.bel
+                      if prop not in IS.shared.com
+                      if DOMAIN.relevant(prop, move.content)))
+    
+#     @precondition
+#     def V():
+#         move = IS.private.agenda.top()
+#         if isinstance(move, Respond):
+#             for prop in IS.private.bel:
+#                 if prop not in IS.shared.com:
+#                     if DOMAIN.relevant(prop, move.content):
+#                         yield R(prop=prop)
+
     NEXT_MOVES.add(Answer(V.prop))
 
 @update_rule
 def select_other(IS, NEXT_MOVES):
-    """Select any overt move from the agenda.
+    """Select any dialogue move from the agenda.
     
-    If the topmost move in /private/agenda is an OvertMove,
+    If the topmost move in /private/agenda is a Move,
     add it as it is to NEXT_MOVES.
     """
     @precondition
     def V():
         move = IS.private.agenda.top()
-        if isinstance(move, OvertMove):
+        if isinstance(move, Move):
             yield R(move=move)
     NEXT_MOVES.add(V.move)
 

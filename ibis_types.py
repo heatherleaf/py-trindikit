@@ -2,268 +2,127 @@
 from trindikit import *
 
 ######################################################################
-# IBIS dialogue moves
-######################################################################
-
-# Dialogue move templates, meant to be subclassed
-
-class SingletonMove(Move):
-    """Template for dialogue moves taking no arguments."""
-    
-    def __init__(self): 
-        pass
-    
-    def _typecheck(self, context): 
-        pass
-    
-    def __cmp__(self, other):
-        return cmp(type(self), type(other))
-    
-    def __hash__(self):
-        return hash(type(self))
-
-class QuestionMove(Move):
-    """Template for dialogue moves with a single question argument."""
-    
-    def __init__(self, que):
-        assert isinstance(que, (Question, str)), "%s must be a question" % que
-        if isinstance(que, str):
-            que = parse_question(que)
-        self.question = que
-
-    def _typecheck(self, context):
-        assert isinstance(self.question, Question)
-        self.question._typecheck(context)
-    
-    def __cmp__(self, other):
-        return cmp(type(self), type(other)) or cmp(self.question, other.question)
-    
-    def __hash__(self):
-        return hash((type(self), self.question))
-
-class AnswerMove(Move):
-    """Template for dialogue moves with a single answer argument."""
-    
-    def __init__(self, ans):
-        assert isinstance(ans, (Ans, str)), \
-            "%s must be a proposition or a short answer" % que
-        if isinstance(ans, str):
-            ans = parse_answer(ans)
-        self.answer = ans
-
-    def _typecheck(self, context):
-        assert isinstance(self.answer, Ans)
-        self.answer._typecheck(context)
-    
-    def __cmp__(self, other):
-        return cmp(type(self), type(other)) or cmp(self.answer, other.answer)
-    
-    def __hash__(self):
-        return hash((type(self), self.answer))
-
-# Overt dialogue moves
-
-class OvertMove(Move): pass
-
-class Greet(OvertMove, SingletonMove): pass
-
-class Quit(OvertMove, SingletonMove): pass
-
-class Ask(OvertMove, QuestionMove): pass
-
-class Answer(OvertMove, AnswerMove): pass
-
-# Tacit dialogue moves
-
-class TacitMove(Move): pass
-
-class Respond(TacitMove, QuestionMove): pass
-
-class ConsultDB(TacitMove, QuestionMove): pass
-
-class Findout(TacitMove, QuestionMove): pass
-
-class Raise(TacitMove, QuestionMove): pass
-
-# Complex plan constructs
-
-class If(Move):
-    """A conditional plan construct, consisting of a condition,
-    a true branch and an optional false branch.
-    """
-    
-    def __init__(self, cond, iftrue, iffalse=()):
-        if isinstance(cond, str):
-            cond = parse_question(cond)
-        self.cond = cond
-        self.iftrue = tuple(iftrue)
-        self.iffalse = tuple(iffalse)
-
-    def _typecheck(self, context):
-        assert isinstance(self.cond, Question)
-        assert all(isinstance(m, Move) for m in self.iftrue)
-        assert all(isinstance(m, Move) for m in self.iffalse)
-        self.cond._typecheck(context)
-        for m in self.iftrue:
-            m._typecheck(context)
-        for m in self.iffalse:
-            m._typecheck(context)
-
-######################################################################
 # IBIS semantic types
 ######################################################################
 
-class Semantics(object): 
-    """Abstract base class for semantic objects."""
+# Atomic types: individuals, predicates, sorts
+
+class Atomic(Type):
+    """Abstract base class for semantic classes taking a string argument.
     
-    content = None
+    Do not create instances of this class, use instead the subclasses:
+      - Ind
+      - Pred0
+      - Pred1
+      - Sort
+    """
+    contentclass = basestring
     
-    def __init__(self):
-        raise AssertionError("%s is an abstract class" % type(self).__name__)
+    def __init__(self, atom):
+        assert isinstance(atom, basestring)
+        assert atom not in ("", "yes", "no")
+        assert atom[0].isalpha()
+        assert all(ch.isalnum() or ch in "_-+:" for ch in atom)
+        self.content = atom
     
-    def str(self):
-        return "<>"
-    
+    @classmethod
+    def parse(cls, atom):
+        return cls(atom)
+
     def __str__(self):
-        return self.str()
-    
-    def __repr__(self):
-        return "<%s: %s>" % (type(self).__name__, self.str())
-    
-    def __cmp__(self, other):
-        return cmp(type(self), type(other)) or cmp(self.content, other.content)
-    
-    def __hash__(self):
-        return hash((type(self), self.content))
+        return "%s" % self.content
 
-class Sentence(Semantics): pass
+class Ind(Atomic): 
+    """Individuals."""
+    def _typecheck(self, context):
+        assert self.content in context.inds
 
-# Questions
+class Pred0(Atomic): 
+    """0-place predicates."""
+    def _typecheck(self, context):
+        assert self.content in context.preds0
 
-class Question(Sentence): 
-    """Abstract base class for all kinds of questions.
-    
-    Currently there are the following question classes:
-      - WhQ(pred), where pred is a Pred1
-      - YNQ(prop), where prop is a Prop
-      - AltQ(ynq1, ynq2, ...), where ynq1, ... are YNQs
-    
-    To create a Question, use any of the constructors above,
-    or call the function parse_question("...").
-    """
-    pass
-
-def parse_question(que):
-    """Parse a string into a question move.
-    
-    "?x.pred(x)" -> WhQ("pred")
-    "?prop" -> YNQ("prop")
-    """
-    if que.startswith('?x.') and que.endswith('(x)'):
-        return WhQ(que)
-    elif que.startswith('?'):
-        return YNQ(que)
-    else:
-        raise SyntaxError("Could not parse question: %s" % que)
-
-class WhQ(Question): 
-    def __init__(self, pred):
-        assert isinstance(pred, (Pred1, str)), "%s must be a 1-place predicate" % pred
-        if isinstance(pred, str):
-            if pred.startswith('?x.') and pred.endswith('(x)'):
-                pred = pred[3:-3]
-            pred = Pred1(pred)
-        self.content = pred
-
-    @property
-    def pred(self): return self.content
-
-    def str(self):
-        return "?x.%s(x)" % self.content
+class Pred1(Atomic): 
+    """1-place predicates."""
+    def apply(self, ind):
+        """Apply the predicate to an individual, returning a proposition."""
+        assert isinstance(ind, Ind), "%s must be an individual" % ind
+        return Prop(self, ind)
 
     def _typecheck(self, context):
-        assert isinstance(self.content, Pred1)
-        self.content._typecheck(context)
+        assert self.content in context.preds1
 
-class YNQ(Question): 
-    def __init__(self, prop):
-        assert isinstance(prop, (Prop, str)), "%s must be a proposition" % prop
-        if isinstance(prop, str):
-            if prop.startswith('?'):
-                prop = prop[1:]
-            prop = Prop(prop)
-        self.content = prop
-
-    @property
-    def prop(self): return self.content
-
-    def str(self):
-        return "?%s" % self.content
-
+class Sort(Pred1): 
+    """Sort."""
     def _typecheck(self, context):
-        assert isinstance(self.content, Prop)
-        self.content._typecheck(context)
+        assert self.content in context.sorts
 
-class AltQ(Question): 
-    def __init__(self, *ynqs):
-        if len(ynqs) == 1 and is_sequence(ynqs[0]):
-            ynqs = tuple(ynqs[0])
-        assert all(isinstance(q, (YNQ, str)) for q in quests), \
-            "all AltQ arguments must be y/n-questions"
-        self.content = tuple((q if isinstance(q, YNQ) else YNQ(q))
-                             for q in quests)
 
-    @property
-    def ynqs(self): return self.content
+# Sentences: answers, questions
 
-    def str(self):
-        return "{" + " | ".join(map(str, self.content)) + "}"
+class Sentence(Type): 
+    """Superclass for answers and questions."""
+    def __new__(cls, sent, *args, **kw):
+        if cls is Sentence:
+            assert isinstance(sent, basestring)
+            assert not args and not kw
+            if sent.startswith('?'):
+                return Question(sent)
+            else:
+                return Ans(sent)
+        else:
+            return Type.__new__(cls, sent, *args, **kw)
 
-    def _typecheck(self, context):
-        assert all(isinstance(q, YNQ) for q in self.content)
-        for q in self.content:
-            q._typecheck(context)
 
-# Answers
+# Answer types: propositions, short answers, y/n-answers
 
 class Ans(Sentence): 
     """Abstract base class for all kinds of answers.
     
     Currently there are the following answer classes:
+    
       - Prop(pred, [ind], [yes]), where pred is a Pred0 or Pred1,
                                   ind is an Ind and yes is a bool.
       - ShortAns(ind, [yes]), where ind is an Ind and yes is a bool.
       - YesNo(yes), where yes is a bool.
     
     To create an answer, use any of the constructors above,
-    or call the function parse_answer("...").
+    or call the abstract constructor with a string, Ans("..."):
+    
+      - Ans("pred(ind)"), Ans("pred()") -> Prop("...")
+      - Ans("ind") -> ShortAns("...")
+      - Ans("yes"), Ans("no") -> YesNo("...")
     """
-    pass
-
-def parse_answer(ans):
-    if ans in ('yes', 'no'):
-        return YesNo(ans)
-    elif '(' not in ans and ')' not in ans:
-        return ShortAns(ans)
-    elif '(' in ans and ans.endswith(')'):
-        return Prop(ans)
-    else:
-        raise SyntaxError("Could not parse answer: %s" % ans)
+    def __new__(cls, ans, *args, **kw):
+        if cls is Ans:
+            assert isinstance(ans, basestring)
+            assert not args and not kw
+            if ans in ('yes', 'no'):
+                return YesNo(ans)
+            elif '(' not in ans and ')' not in ans:
+                return ShortAns(ans)
+            elif '(' in ans and ans.endswith(')'):
+                return Prop(ans)
+            else:
+                raise SyntaxError("Could not parse answer: %s" % ans)
+        else:
+            return Sentence.__new__(cls, ans, *args, **kw)
 
 class Prop(Ans): 
+    """Proposition."""
     def __init__(self, pred, ind=None, yes=True):
-        assert (isinstance(pred, (Pred0, str)) and ind is None or
+        assert (isinstance(pred, (Pred0, basestring)) and ind is None or
                 isinstance(pred, Pred1) and isinstance(ind, Ind)), \
                 ("%s must be a predicate, and %s must be None or an individual" % 
                  (pred, ind))
         assert isinstance(yes, bool), "%s must be a bool" % yes
-        if isinstance(pred, str):
+        if isinstance(pred, basestring):
             assert '(' in pred and pred.endswith(')'), \
                 "'%s' must be of the form '[-] pred ( [ind] )'" % pred
             pred = pred[:-1]
             if pred.startswith('-'):
-                pred = pred[1:]
                 yes = not yes
+                pred = pred[1:]
             pred, _, ind = pred.partition('(')
             if ind:
                 pred = Pred1(pred)
@@ -272,22 +131,22 @@ class Prop(Ans):
                 pred = Pred0(pred)
                 ind = None
         self.content = pred, ind, yes
-
+    
     @property
     def pred(self): return self.content[0]
     @property
     def ind(self): return self.content[1]
     @property
     def yes(self): return self.content[2]
-
+    
     def __neg__(self):
         pred, ind, yes = self.content
         return Prop(self.pred, self.ind, not self.yes)
-
-    def str(self):
+    
+    def __str__(self):
         pred, ind, yes = self.content
         return "%s%s(%s)" % ("" if yes else "-", pred, ind or "")
-
+    
     def _typecheck(self, context):
         pred, ind, yes = self.content
         assert (isinstance(pred, Pred0) and ind is None or
@@ -299,10 +158,13 @@ class Prop(Ans):
             assert context.preds1[pred.content] == context.inds[ind.content]
 
 class ShortAns(Ans): 
+    """Short answer."""
+    contentclass = Ind
+    
     def __init__(self, ind, yes=True):
-        assert isinstance(ind, (Ind, str)), "%s must be an individual" % ind
         assert isinstance(yes, bool), "%s must be a boolean" % yes
-        if isinstance(ind, str):
+        assert isinstance(ind, (Ind, basestring)), "%s must be an individual" % ind
+        if isinstance(ind, basestring):
             if ind.startswith('-'):
                 ind = ind[1:]
                 yes = not yes
@@ -318,7 +180,7 @@ class ShortAns(Ans):
         ind, yes = self.content
         return ShortAns(ind, not yes)
 
-    def str(self):
+    def __str__(self):
         ind, yes = self.content
         return "%s%s" % ("" if yes else "-", ind)
 
@@ -329,9 +191,12 @@ class ShortAns(Ans):
         ind._typecheck(context)
 
 class YesNo(ShortAns):
+    """Yes/no-answer."""
+    contentclass = bool
+    
     def __init__(self, yes):
-        assert isinstance(yes, (bool, str)), "%s must be a boolean" % yes
-        if isinstance(yes, str):
+        assert isinstance(yes, (bool, basestring)), "%s must be a boolean" % yes
+        if isinstance(yes, basestring):
             assert yes in ("yes", "no"), "'%s' must be 'yes' or 'no'" % yes
             yes = yes == "yes"
         self.content = yes
@@ -342,49 +207,160 @@ class YesNo(ShortAns):
     def __neg__(self):
         return YesNo(not self.content)
 
-    def str(self):
+    def __str__(self):
         return "yes" if self.content else "no"
 
-    def _typecheck(self, context):
-        assert isinstance(self.content, bool)
 
-# Predicates, individuals
+# Question types: wh-questions, y/n-questions, alternative questions
 
-class Atomic(Semantics):
-    """Abstract base class for semantic classes taking a string argument.
+class Question(Sentence): 
+    """Abstract base class for all kinds of questions.
     
-    Do not create instances of this class, use instead the subclasses:
-      - Ind
-      - Pred0
-      - Pred1
-      - Sort
+    Currently there are the following question classes:
+      - WhQ(pred), where pred is a Pred1
+      - YNQ(prop), where prop is a Prop
+      - AltQ(ynq1, ynq2, ...), where ynq1, ... are YNQs
+    
+    To create a Question, use any of the constructors above,
+    or call the abstract constructor with a string, Question("..."):
+
+      - Question("?x.pred(x)") -> WhQ("pred")
+      - Question("?prop") -> YNQ("prop")
+    """
+    def __new__(cls, que, *args, **kw):
+        """Parse a string into a Question.
+    
+        "?x.pred(x)" -> WhQ("pred")
+        "?prop" -> YNQ("prop")
+        """
+        if cls is Question:
+            assert isinstance(que, basestring)
+            assert not args and not kw
+            if que.startswith('?x.') and que.endswith('(x)'):
+                return WhQ(que[3:-3])
+            elif que.startswith('?'):
+                return YNQ(que[1:])
+            else:
+                raise SyntaxError("Could not parse question: %s" % que)
+        else:
+            return Sentence.__new__(cls, que, *args, **kw)
+
+class WhQ(Question): 
+    """Wh-question."""
+    contentclass = Pred1
+    
+    def __init__(self, pred):
+        assert isinstance(pred, (Pred1, basestring))
+        if isinstance(pred, basestring):
+            if pred.startswith('?x.') and pred.endswith('(x)'):
+                pred = pred[3:-3]
+            pred = Pred1(pred)
+        self.content = pred
+    
+    @property
+    def pred(self): return self.content
+    
+    def __str__(self):
+        return "?x.%s(x)" % self.content
+
+class YNQ(Question): 
+    """Yes/no-question."""
+    contentclass = Prop
+    
+    def __init__(self, prop):
+        assert isinstance(prop, (Prop, basestring))
+        if isinstance(prop, basestring):
+            if prop.startswith('?'):
+                prop = prop[1:]
+            prop = Prop(prop)
+        self.content = prop
+    
+    @property
+    def prop(self): return self.content
+    
+    def __str__(self):
+        return "?%s" % self.content
+
+class AltQ(Question): 
+    """Alternative question."""
+    def __init__(self, *ynqs):
+        if len(ynqs) == 1 and is_sequence(ynqs[0]):
+            ynqs = ynqs[0]
+        if not all(isinstance(q, (YNQ, basestring)) for q in ynqs):
+            raise TypeError("all AltQ arguments must be y/n-questions")
+        self.content = tuple((q if isinstance(q, YNQ) else Question.parse(q))
+                             for q in ynqs)
+
+    @property
+    def ynqs(self): return self.content
+
+    def __str__(self):
+        return "{" + " | ".join(map(str, self.content)) + "}"
+
+    def _typecheck(self, context):
+        assert all(isinstance(q, YNQ) for q in self.content)
+        for q in self.content:
+            q._typecheck(context)
+
+######################################################################
+# IBIS dialogue moves
+######################################################################
+
+class Greet(SingletonMove): pass
+
+class Quit(SingletonMove): pass
+
+class Ask(Move): 
+    contentclass = Question
+
+class Answer(Move): 
+    contentclass = Ans
+
+
+######################################################################
+# IBIS plan constructors
+######################################################################
+
+class PlanConstructor(Type): 
+    """An abstract base class for plan constructors."""
+
+class Respond(PlanConstructor): 
+    contentclass = Question
+
+class ConsultDB(PlanConstructor):
+    contentclass = Question
+
+class Findout(PlanConstructor):
+    contentclass = Question
+
+class Raise(PlanConstructor):
+    contentclass = Question
+
+# Complex plan constructs
+
+class If(PlanConstructor):
+    """A conditional plan constructor, consisting of a condition,
+    a true branch and an optional false branch.
     """
     
-    def __init__(self, atom):
-        assert isinstance(atom, str)
-        assert atom not in ("yes", "no")
-        assert all(ch.isalnum() or ch in "_-+:" for ch in atom)
-        self.content = atom
-
-    def str(self):
-        return "%s" % self.content
-
-class Ind(Atomic): 
-    def _typecheck(self, context):
-        assert self.content in context.inds
-
-class Pred0(Atomic): 
-    def _typecheck(self, context):
-        assert self.content in context.preds0
-
-class Pred1(Atomic): 
-    def apply(self, ind):
-        assert isinstance(ind, Ind), "%s must be an individual" % ind
-        return Prop(self, ind)
+    def __init__(self, cond, iftrue, iffalse=()):
+        if isinstance(cond, basestring):
+            cond = Question(cond)
+        self.cond = cond
+        self.iftrue = tuple(iftrue)
+        self.iffalse = tuple(iffalse)
+    
+    @property
+    def content(self):
+        return (self.cond, self.iftrue, self.iffalse)
 
     def _typecheck(self, context):
-        assert self.content in context.preds1
+        assert isinstance(self.cond, Question)
+        assert all(isinstance(m, PlanConstructor) for m in self.iftrue)
+        assert all(isinstance(m, PlanConstructor) for m in self.iffalse)
+        self.cond._typecheck(context)
+        for m in self.iftrue:
+            m._typecheck(context)
+        for m in self.iffalse:
+            m._typecheck(context)
 
-class Sort(Pred1): 
-    def _typecheck(self, context):
-        assert self.content in context.sorts

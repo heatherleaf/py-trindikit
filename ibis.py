@@ -21,9 +21,9 @@ class Grammar(object):
         """Parse an input string into a dialogue move or a set of moves."""
         try: return eval(input)
         except: pass
-        try: return Ask(parse_question(input))
+        try: return Ask(Question(input))
         except: pass
-        try: return Answer(parse_answer(input))
+        try: return Answer(Ans(input))
         except: pass
         return None
 
@@ -65,10 +65,10 @@ class Domain(object):
 
     def add_plan(self, trigger, plan):
         """Add a plan to the domain."""
-        assert isinstance(trigger, (Question, str)), \
+        assert isinstance(trigger, (Question, basestring)), \
             "The plan trigger %s must be a Question" % trigger
-        if isinstance(trigger, str):
-            trigger = parse_question(trigger)
+        if isinstance(trigger, basestring):
+            trigger = Question(trigger)
         assert not self.plans.has_key(trigger), \
             "There is already a plan with trigger %s" % trigger
         trigger._typecheck(self)
@@ -124,7 +124,7 @@ class Domain(object):
         """Return (a new copy of) the plan that is relevant to 'question', 
         or None if there is no relevant plan.
         """
-        planstack = stack(Move)
+        planstack = stack(PlanConstructor)
         for construct in reversed(self.plans.get(question)):
             planstack.push(construct)
         return planstack
@@ -199,6 +199,7 @@ class IBIS(IBISController, IBISInfostate, StandardMIVS,
 # IBIS-1
 ######################################################################
 
+
 class IBIS1(IBIS):
     """The IBIS-1 dialogue manager."""
 
@@ -211,20 +212,19 @@ class IBIS1(IBIS):
             maybe(self.load_plan)
             repeat(self.exec_plan)
 
-    grounding    = update_group(get_latest_moves)
-    integrate    = update_group(integrate_usr_ask, integrate_sys_ask,
+    grounding    = rule_group(get_latest_moves)
+    integrate    = rule_group(integrate_usr_ask, integrate_sys_ask,
                                 integrate_answer, integrate_greet,
                                 integrate_usr_quit, integrate_sys_quit)
-    downdate_qud = update_group(downdate_qud)
-    load_plan    = update_group(recover_plan, find_plan)
-    exec_plan    = update_group(remove_findout, remove_raise, exec_consultDB)
+    downdate_qud = rule_group(downdate_qud)
+    load_plan    = rule_group(recover_plan, find_plan)
+    exec_plan    = rule_group(remove_findout, remove_raise, exec_consultDB, execute_if)
 
     def select(self):
         if not self.IS.private.agenda:
             maybe(self.select_action)
         maybe(self.select_move)
 
-    select_action = update_group(select_respond, select_from_plan, reraise_issue)
-    select_move   = update_group(select_answer, select_ask, select_other)
-
+    select_action = rule_group(select_respond, select_from_plan, reraise_issue)
+    select_move   = rule_group(select_answer, select_ask, select_other)
 

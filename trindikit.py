@@ -177,10 +177,10 @@ class record(object):
 
     def __repr__(self):
         return "record(" + "; ".join("%s = %r" % kv for kv in self.asdict().items()) + ")"
-    
-class R(record):
-    """Synonym class for records. For the lazy ones."""
-    pass
+
+def R(**kw):
+    """Synonym for records. For the lazy ones."""
+    return record(**kw)
 
 ######################################################################
 # stacks and similar types
@@ -284,6 +284,60 @@ class stackset(stack):
         return "<stackset with %s elements>" % len(self)
 
 
+class tset(object):
+    """Sets with (optional) typechecking. 
+    
+    tset() -> new set
+    tset(type) -> new set with elements of type 'type'
+    tset(sequence) -> new set initialised from sequence's items,
+        where all items have to be of the same type
+    
+    If a type/class is given as argument when creating the set, 
+    all set operations will be typechecked.
+    """
+    
+    def __init__(self, elements=None):
+        self.elements = set([])
+        self._type = object
+        if elements is None:
+            pass
+        elif isinstance(elements, type):
+            self._type = elements
+        elif is_sequence(elements):
+            self.elements = set(elements)
+            for elem in self.elements:
+                self._type = type(elem)
+                break
+            self._typecheck(*self.elements)
+        else:
+            raise ValueError("The argument (%s) should be a type or a sequence" % elements)
+
+    def __contains__(self, value):
+        return value in self.elements
+    
+    def add(self, value):
+        self._typecheck(value)
+        self.elements.add(value)
+    
+    def clear(self):
+        """Clear the set from all values."""
+        self.elements.clear()
+
+    def __len__(self):
+        return len(self.elements)
+
+    def _typecheck(self, *values):
+        if self._type is not None:
+            for val in values:
+                if not isinstance(val, self._type):
+                    raise TypeError("%s is not an instance of %s" % (val, self._type))
+
+    def __str__(self):
+        return "{" + ", ".join(map(str, reversed(self.elements))) + "}"
+
+    def __repr__(self):
+        return "<set with %s elements>" % len(self)
+
 ######################################################################
 # enumeration class 
 ######################################################################
@@ -333,23 +387,61 @@ Speaker = enum('USR', 'SYS')
 ProgramState = enum('RUN', 'QUIT')
 
 ######################################################################
-# dialogue moves
+# semantic types and dialogue moves
 ######################################################################
 
-class Move(object): 
-    """An abstract base class for dialogue moves. 
+class Type(object): 
+    """An abstract base class for semantic types.
     
-    This should be subclassed by the dialogue moves in a specific 
-    dialogue theory implementation.
+    This is meant to be subclassed by the types in a specific 
+    dialogue theory implementation. 
     """
-    def __init__(self):
-        raise AssertionError("%s is an abstract class" % type(self).__name__)
+    contentclass = object
     
-    def _typecheck(self, context):
-        raise AssertionError("%s is an abstract class" % type(self).__name__)
+    def __new__(cls, *args, **kw):
+        return object.__new__(cls)
+    
+    def __init__(self, content):
+        if isinstance(content, self.contentclass):
+            self.content = content
+        elif isinstance(content, basestring):
+            self.content = self.contentclass(content)
+        else:
+            raise TypeError("%r must be of type %r" % (content, self.contentclass))
+    
+    def _typecheck(self, context=None):
+        assert isinstance(self.content, self.contentclass)
+        if hasattr(self.content, '_typecheck'):
+            self.content._typecheck(context)
     
     def __repr__(self):
-        return type(self).__name__ + "(" + ", ".join(map(str, self.__dict__.values())) + ")"
+        return "%s(%r)" % (type(self).__name__, self.content)
+    
+    def __cmp__(self, other):
+        return cmp(type(self), type(other)) or cmp(self.content, other.content)
+    
+    def __hash__(self):
+        return hash((type(self), self.content))
+
+
+class SingletonType(Type):
+    """Abstract class for singleton semantic types."""
+    contentclass = type(None)
+    
+    def __init__(self):
+        self.content = None
+    
+    def __repr__(self):
+        return "%r()" % type(self).__name__
+
+
+class Move(Type): 
+    """An abstract base class for dialogue moves."""
+
+class SingletonMove(SingletonType, Move): 
+    """An abstract base class for singleton dialogue moves."""
+
+
 
 ######################################################################
 # algorithm operators and decorators
@@ -416,7 +508,7 @@ def repeat(*rules):
         except PreconditionFailure:
             break
 
-def update_group(*rules):
+def rule_group(*rules):
     """Group together a number of update rules. 
     
     When executed, the rules are tried in order. The first one whose 
@@ -481,7 +573,7 @@ def update_rule(function):
     return rule
 
 def precondition(test):
-    """Call a generator function as an update precondition.
+    """Call a generator or a generator function as an update precondition.
     
     The function returns the first yielded result of the generator function. 
     If there are no results, i.e. if the function raises a StopIteration 
@@ -503,12 +595,22 @@ def precondition(test):
     
     @update_rule
     def name_of_the_rule(ATTR1, ATTR2, ...):
-        pre = lambda: (...result... for ...loops over ATTR1, ATTR2, ...)
-        V = precondition(pre)
+        V = precondition(lambda: 
+                         (...result... for ...loops over ATTR1, ATTR2, ...))
         ...now V is bound to the first yielded result...
+    
+    Note, however, that you have to put the generator expression within
+    a lambda, and inside parentheses. Otherwise Python will raise a
+    StopIteration exception, because of scoping problems.
     """
     try:
-        result = test().next()
+        if hasattr(test, 'next'):
+            result = test.next()
+        elif hasattr(test, '__call__'):
+            result = test().next()
+        else:
+            raise SyntaxError("Precondition must be a generator or a generator "
+                              "function. Instead it is a %s" % type(test))
         if result:
             if isinstance(result, record):
                 for key, value in result.asdict().items():

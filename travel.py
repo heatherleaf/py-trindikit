@@ -1,5 +1,12 @@
 # -*- encoding: utf-8 -*-
 
+#
+# travel.py
+#
+# The author or authors of this code dedicate any and all 
+# copyright interest in this code to the public domain.
+
+
 from ibis import *
 
 preds0 = 'return', 'need-visa'

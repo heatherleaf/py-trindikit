@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 #
 # trindikit.py
 # Copyright (C) 2009, Peter Ljunglöf. All rights reserved.

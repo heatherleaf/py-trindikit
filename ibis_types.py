@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 #
 # ibis_types.py
 # Copyright (C) 2009, Peter Ljunglöf. All rights reserved.
@@ -37,16 +39,15 @@ class Atomic(Type):
     contentclass = basestring
     
     def __init__(self, atom):
-        assert isinstance(atom, basestring)
+        assert isinstance(atom, (basestring, int))
         assert atom not in ("", "yes", "no")
-        assert atom[0].isalpha()
-        assert all(ch.isalnum() or ch in "_-+:" for ch in atom)
+        try:
+            atom = int(atom)
+        except ValueError:
+            assert atom[0].isalpha()
+            assert all(ch.isalnum() or ch in "_-+:" for ch in atom)
         self.content = atom
     
-    @classmethod
-    def parse(cls, atom):
-        return cls(atom)
-
     def __str__(self):
         return "%s" % self.content
 
@@ -306,7 +307,7 @@ class AltQ(Question):
             ynqs = ynqs[0]
         if not all(isinstance(q, (YNQ, basestring)) for q in ynqs):
             raise TypeError("all AltQ arguments must be y/n-questions")
-        self.content = tuple((q if isinstance(q, YNQ) else Question.parse(q))
+        self.content = tuple((q if isinstance(q, YNQ) else Question(q))
                              for q in ynqs)
 
     @property

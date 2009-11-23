@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 #
 # ibis_rules.py
 # Copyright (C) 2009, Peter Ljunglöf. All rights reserved.

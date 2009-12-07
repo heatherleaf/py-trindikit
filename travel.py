@@ -8,6 +8,7 @@
 
 
 from ibis import *
+from cfg_grammar import *
 
 preds0 = 'return', 'need-visa'
 
@@ -21,7 +22,7 @@ preds1 = {'price': 'int',
           }
 
 means = 'plane', 'train'
-cities = 'paris', 'london'
+cities = 'paris', 'london', 'berlin'
 days = 'today', 'tomorrow'
 classes = 'first', 'second'
 
@@ -46,10 +47,39 @@ domain.add_plan("?x.price(x)",
                  ])
 
 
+class TravelDB(Database):
 
-database = Database()
+    def __init__(self):
+        self.entries = []
 
-grammar = Grammar()
+    def consultDB(self, question, context):
+        depart_city = self.getContext(context, "depart_city")
+        dest_city = self.getContext(context, "dest_city")
+        day = self.getContext(context, "depart_day")
+        entry = self.lookupEntry(depart_city, dest_city, day)
+        price = entry['price']
+        return Prop(Pred1("price"), Ind(price), True)
+
+    def lookupEntry(self, depart_city, dest_city, day):
+        for e in self.entries:
+            if e['from'] == depart_city and e['to'] == dest_city and e['day'] == day:
+                return e
+        assert False
+
+    def getContext(self, context, pred):
+        for prop in context:
+            if prop.pred.content == pred:
+                return prop.ind.content
+        assert False
+
+    def addEntry(self, entry):
+        self.entries.append(entry)
+
+database = TravelDB()
+database.addEntry({'price':'232', 'from':'berlin', 'to':'paris', 'day':'today'})
+database.addEntry({'price':'345', 'from':'paris', 'to':'london', 'day':'today'})
+
+grammar = CFG_Grammar("file:travel.fcfg")
 
 ibis = IBIS1(domain, database, grammar)
 

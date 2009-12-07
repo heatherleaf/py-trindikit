@@ -28,6 +28,7 @@
 import inspect 
 import functools
 import collections
+import sys
 
 ######################################################################
 # helper functions
@@ -798,6 +799,11 @@ class SimpleInput(object):
         
         The string is put in INPUT, and LATEST_SPEAKER is set to USR.
         """
-        INPUT.set(raw_input("U> "))
+        try:
+            str = raw_input("U> ")
+        except EOFError:
+            print "EOF"
+            sys.exit()
+        INPUT.set(str)
         LATEST_SPEAKER.set(Speaker.USR)
         print

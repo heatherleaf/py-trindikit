@@ -1,0 +1,34 @@
+% start USR
+
+
+# IBIS / domain-independent
+
+USR[sem=?s] -> ANSWER[sem=?s] | ASK[sem=?s]
+
+ASK[sem=[Ask=?q]] -> WHQ[q=?q]
+
+ANSWER[sem=[Answer=?ans]] -> SHORTANS[ans=?ans] | YESNOANS[ans=?ans]
+
+SHORTANS[ans=?ind] -> CAT[cat=?cat, ind=?ind]
+#SHORTANS[ans=[pred=?cat, ind=?ind]] -> CAT[cat=?cat, ind=?ind]
+
+YESNOANS[ans=yes] -> 'yes' | 'yeah'
+YESNOANS[ans=yes] -> 'no' | 'nope'
+
+
+# travel
+
+WHQ[q=price] -> 'price'
+
+CAT[cat=how, ind=plane] -> 'plane' | 'flight'
+CAT[cat=how, ind=train] -> 'train'
+
+CAT[cat=city, ind=london] -> 'london'
+CAT[cat=city, ind=paris]  -> 'paris'
+CAT[cat=city, ind=berlin] -> 'berlin'
+
+CAT[cat=class, ind=first]  -> 'first' | 'business'
+CAT[cat=class, ind=second] -> 'second' | 'economy'
+
+CAT[cat=day, ind=today]    -> 'today'
+CAT[cat=day, ind=tomorrow] -> 'tomorrow'

@@ -1,0 +1,41 @@
+--- price query with short answers as dialogue moves
+*
+S> 'Greet'()
+U> Ask("?x.price(x)")
+S> Ask(WhQ(Pred1('how')))
+U> Answer("how(plane)")
+S> Ask(WhQ(Pred1('dest_city')))
+U> Answer("london")
+S> Ask(WhQ(Pred1('depart_city')))
+U> Answer("paris")
+S> Ask(WhQ(Pred1('depart_day')))
+U> Answer("today")
+S> Ask(WhQ(Pred1('class')))
+U> Answer("first")
+S> Ask(YNQ(Prop((Pred0('return'), None, True))))
+U> Answer("yes")
+S> Ask(WhQ(Pred1('return_day')))
+U> Answer("tomorrow")
+S> Answer(Prop((Pred1('price'), Ind(345), True)))
+*
+
+--- price query with short answers as text
+*
+S> 'Greet'()
+U> price
+S> Ask(WhQ(Pred1('how')))
+U> plane
+S> Ask(WhQ(Pred1('dest_city')))
+U> london
+S> Ask(WhQ(Pred1('depart_city')))
+U> paris
+S> Ask(WhQ(Pred1('depart_day')))
+U> today
+S> Ask(WhQ(Pred1('class')))
+U> first
+S> Ask(YNQ(Prop((Pred0('return'), None, True))))
+U> yes
+S> Ask(WhQ(Pred1('return_day')))
+U> tomorrow
+S> Answer(Prop((Pred1('price'), Ind(345), True)))
+*

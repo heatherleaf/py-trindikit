@@ -784,14 +784,15 @@ class SimpleInput(object):
         to a set of LATEST_MOVES.
         """
         LATEST_MOVES.clear()
-        move_or_moves = GRAMMAR.interpret(INPUT.get())
-        if not move_or_moves:
-            print "Did not understand:", INPUT
-            print
-        elif isinstance(move_or_moves, Move):
-            LATEST_MOVES.add(move_or_moves)
-        else:
-            LATEST_MOVES.update(move_or_moves)
+        if INPUT.value != '':
+            move_or_moves = GRAMMAR.interpret(INPUT.get())
+            if not move_or_moves:
+                print "Did not understand:", INPUT
+                print
+            elif isinstance(move_or_moves, Move):
+                LATEST_MOVES.add(move_or_moves)
+            else:
+                LATEST_MOVES.update(move_or_moves)
 
     @update_rule
     def input(INPUT, LATEST_SPEAKER):

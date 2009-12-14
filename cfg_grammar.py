@@ -38,7 +38,7 @@ class CFG_Grammar(Grammar):
         except: pass
         try: return eval(input)
         except: pass
-        return None
+        return set([])
 
     def parseString(self, input):
         tokens = input.split()

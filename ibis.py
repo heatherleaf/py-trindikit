@@ -225,13 +225,12 @@ class IBIS1(IBIS):
     """The IBIS-1 dialogue manager."""
 
     def update(self):
-        if self.LATEST_MOVES:
-            self.IS.private.agenda.clear()
-            self.grounding()
-            maybe(self.integrate)
-            maybe(self.downdate_qud)
-            maybe(self.load_plan)
-            repeat(self.exec_plan)
+        self.IS.private.agenda.clear()
+        self.grounding()
+        maybe(self.integrate)
+        maybe(self.downdate_qud)
+        maybe(self.load_plan)
+        repeat(self.exec_plan)
 
     grounding    = rule_group(get_latest_moves)
     integrate    = rule_group(integrate_usr_ask, integrate_sys_ask,
@@ -244,8 +243,9 @@ class IBIS1(IBIS):
     def select(self):
         if not self.IS.private.agenda:
             maybe(self.select_action)
+        maybe(self.select_icm)
         maybe(self.select_move)
 
     select_action = rule_group(select_respond, select_from_plan, reraise_issue)
     select_move   = rule_group(select_answer, select_ask, select_other)
-
+    select_icm    = rule_group(select_icm_sem_neg)

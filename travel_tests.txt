@@ -39,3 +39,29 @@ S> Ask(WhQ(Pred1('return_day')))
 U> tomorrow
 S> Answer(Prop((Pred1('price'), Ind(345), True)))
 *
+
+--- negative understanding of user input
+*
+S> 'Greet'()
+U> sdf sdfsdfsdf
+S> icm:neg*sem, icm:per*pos:'sdf sdfsdfsdf'
+U> price
+S> Ask(WhQ(Pred1('how')))
+U> dfg dfgdfgdfg
+S> icm:neg*sem, icm:per*pos:'dfg dfgdfgdfg', Ask(WhQ(Pred1('how')))
+U>
+S> Ask(WhQ(Pred1('how')))
+*
+
+--- empty user utterances
+*
+S> 'Greet'()
+U>
+U>
+U> Ask("?x.price(x)")
+S> Ask(WhQ(Pred1('how')))
+U>
+S> Ask(WhQ(Pred1('how')))
+U> Answer("how(plane)")
+S> Ask(WhQ(Pred1('dest_city')))
+*

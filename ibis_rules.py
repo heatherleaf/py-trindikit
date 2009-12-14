@@ -335,6 +335,21 @@ def reraise_issue(IS, DOMAIN):
 # Selecting dialogue moves
 
 @update_rule
+def select_icm_sem_neg(IS, INPUT, NEXT_MOVES):
+    """If interpretation failed, select ICM for negative
+    semantic understanding."""
+
+    @precondition
+    def V():
+        if len(IS.shared.lu.moves) == 0:
+            if INPUT.value:
+                if INPUT.value != '':
+                    if IS.shared.lu.speaker == Speaker.USR:
+                        yield True
+    NEXT_MOVES.add(ICM('per', 'pos', INPUT.value))
+    NEXT_MOVES.add(ICM('neg', 'sem'))
+
+@update_rule
 def select_ask(IS, NEXT_MOVES):
     """Select an Ask move from the agenda.
     

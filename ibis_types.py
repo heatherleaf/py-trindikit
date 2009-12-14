@@ -335,6 +335,20 @@ class Ask(Move):
 class Answer(Move): 
     contentclass = Ans
 
+class ICM(Move):
+    contentclass = object
+    
+    def __init__(self, level, polarity, icm_content=None):
+        self.level = level
+        self.polarity = polarity
+        self.icm_content = icm_content
+        self.content = (level, polarity, icm_content)
+
+    def __str__(self):
+        s = "icm:" + self.level + "*" + self.polarity
+        if self.icm_content:
+            s += ":'" + self.icm_content + "'"
+        return s
 
 ######################################################################
 # IBIS plan constructors

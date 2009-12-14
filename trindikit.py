@@ -274,6 +274,9 @@ class stack(object):
                 if not isinstance(val, self._type):
                     raise TypeError("%s is not an instance of %s" % (val, self._type))
 
+    def __iter__(self):
+        return self.elements.__iter__()
+        
     def __str__(self):
         return "<[ " + ", ".join(map(str, reversed(self.elements))) + " <]"
 
@@ -703,7 +706,7 @@ class StandardMIVS(DialogueManager):
       - self.INPUT          : value of str
       - self.LATEST_SPEAKER : value of SYS | USR
       - self.LATEST_MOVES   : set of Move
-      - self.NEXT_MOVES     : set of Move
+      - self.NEXT_MOVES     : stack of Move
       - self.OUTPUT         : value of str
       - self.PROGRAM_STATE  : value of RUN | QUIT
     """
@@ -713,7 +716,7 @@ class StandardMIVS(DialogueManager):
         self.INPUT          = value(str)
         self.LATEST_SPEAKER = value(Speaker)
         self.LATEST_MOVES   = set()
-        self.NEXT_MOVES     = set()
+        self.NEXT_MOVES     = stack(Move)
         self.OUTPUT         = value(str)
         self.PROGRAM_STATE  = value(ProgramState)
         self.PROGRAM_STATE.set(ProgramState.RUN)

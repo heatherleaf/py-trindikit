@@ -346,8 +346,8 @@ def select_icm_sem_neg(IS, INPUT, NEXT_MOVES):
                 if INPUT.value != '':
                     if IS.shared.lu.speaker == Speaker.USR:
                         yield True
-    NEXT_MOVES.add(ICM('per', 'pos', INPUT.value))
-    NEXT_MOVES.add(ICM('neg', 'sem'))
+    NEXT_MOVES.push(ICM('per', 'pos', INPUT.value))
+    NEXT_MOVES.push(ICM('neg', 'sem'))
 
 @update_rule
 def select_ask(IS, NEXT_MOVES):
@@ -363,7 +363,7 @@ def select_ask(IS, NEXT_MOVES):
         if isinstance(move, Findout) or isinstance(move, Raise):
             yield R(move=move, que=move.content)
 
-    NEXT_MOVES.add(Ask(V.que))
+    NEXT_MOVES.push(Ask(V.que))
     if IS.private.plan:
         move = IS.private.plan.top()
         if isinstance(move, Raise) and move.content == V.que:
@@ -394,7 +394,7 @@ def select_answer(IS, DOMAIN, NEXT_MOVES):
 #                     if DOMAIN.relevant(prop, move.content):
 #                         yield R(prop=prop)
 
-    NEXT_MOVES.add(Answer(V.prop))
+    NEXT_MOVES.push(Answer(V.prop))
 
 @update_rule
 def select_other(IS, NEXT_MOVES):
@@ -408,5 +408,5 @@ def select_other(IS, NEXT_MOVES):
         move = IS.private.agenda.top()
         if isinstance(move, Move):
             yield R(move=move)
-    NEXT_MOVES.add(V.move)
+    NEXT_MOVES.push(V.move)
 

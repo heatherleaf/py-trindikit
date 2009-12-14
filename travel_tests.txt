@@ -44,11 +44,11 @@ S> Answer(Prop((Pred1('price'), Ind(345), True)))
 *
 S> 'Greet'()
 U> sdf sdfsdfsdf
-S> icm:neg*sem, icm:per*pos:'sdf sdfsdfsdf'
+S> icm:per*pos:'sdf sdfsdfsdf', icm:neg*sem
 U> price
 S> Ask(WhQ(Pred1('how')))
 U> dfg dfgdfgdfg
-S> icm:neg*sem, icm:per*pos:'dfg dfgdfgdfg', Ask(WhQ(Pred1('how')))
+S> icm:per*pos:'dfg dfgdfgdfg', icm:neg*sem, Ask(WhQ(Pred1('how')))
 U>
 S> Ask(WhQ(Pred1('how')))
 *

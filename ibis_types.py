@@ -332,6 +332,9 @@ class Quit(SingletonMove): pass
 class Ask(Move): 
     contentclass = Question
 
+    def __str__(self):
+        return 'Ask("%s")' % self.content.__str__()
+
 class Answer(Move): 
     contentclass = Ans
 

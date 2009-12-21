@@ -2,19 +2,19 @@
 *
 S> 'Greet'()
 U> Ask("?x.price(x)")
-S> Ask(WhQ(Pred1('how')))
+S> Ask("?x.how(x)")
 U> Answer("how(plane)")
-S> Ask(WhQ(Pred1('dest_city')))
+S> Ask("?x.dest_city(x)")
 U> Answer("london")
-S> Ask(WhQ(Pred1('depart_city')))
+S> Ask("?x.depart_city(x)")
 U> Answer("paris")
-S> Ask(WhQ(Pred1('depart_day')))
+S> Ask("?x.depart_day(x)")
 U> Answer("today")
-S> Ask(WhQ(Pred1('class')))
+S> Ask("?x.class(x)")
 U> Answer("first")
-S> Ask(YNQ(Prop((Pred0('return'), None, True))))
+S> Ask("?return()")
 U> Answer("yes")
-S> Ask(WhQ(Pred1('return_day')))
+S> Ask("?x.return_day(x)")
 U> Answer("tomorrow")
 S> Answer(Prop((Pred1('price'), Ind(345), True)))
 *
@@ -23,19 +23,19 @@ S> Answer(Prop((Pred1('price'), Ind(345), True)))
 *
 S> 'Greet'()
 U> price
-S> Ask(WhQ(Pred1('how')))
+S> Ask("?x.how(x)")
 U> plane
-S> Ask(WhQ(Pred1('dest_city')))
+S> Ask("?x.dest_city(x)")
 U> london
-S> Ask(WhQ(Pred1('depart_city')))
+S> Ask("?x.depart_city(x)")
 U> paris
-S> Ask(WhQ(Pred1('depart_day')))
+S> Ask("?x.depart_day(x)")
 U> today
-S> Ask(WhQ(Pred1('class')))
+S> Ask("?x.class(x)")
 U> first
-S> Ask(YNQ(Prop((Pred0('return'), None, True))))
+S> Ask("?return()")
 U> yes
-S> Ask(WhQ(Pred1('return_day')))
+S> Ask("?x.return_day(x)")
 U> tomorrow
 S> Answer(Prop((Pred1('price'), Ind(345), True)))
 *
@@ -46,11 +46,11 @@ S> 'Greet'()
 U> sdf sdfsdfsdf
 S> icm:per*pos:'sdf sdfsdfsdf', icm:neg*sem
 U> price
-S> Ask(WhQ(Pred1('how')))
+S> Ask("?x.how(x)")
 U> dfg dfgdfgdfg
-S> icm:per*pos:'dfg dfgdfgdfg', icm:neg*sem, Ask(WhQ(Pred1('how')))
+S> icm:per*pos:'dfg dfgdfgdfg', icm:neg*sem, Ask("?x.how(x)")
 U>
-S> Ask(WhQ(Pred1('how')))
+S> Ask("?x.how(x)")
 *
 
 --- empty user utterances
@@ -59,9 +59,9 @@ S> 'Greet'()
 U>
 U>
 U> Ask("?x.price(x)")
-S> Ask(WhQ(Pred1('how')))
+S> Ask("?x.how(x)")
 U>
-S> Ask(WhQ(Pred1('how')))
+S> Ask("?x.how(x)")
 U> Answer("how(plane)")
-S> Ask(WhQ(Pred1('dest_city')))
+S> Ask("?x.dest_city(x)")
 *

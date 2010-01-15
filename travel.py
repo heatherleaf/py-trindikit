@@ -79,7 +79,26 @@ database = TravelDB()
 database.addEntry({'price':'232', 'from':'berlin', 'to':'paris', 'day':'today'})
 database.addEntry({'price':'345', 'from':'paris', 'to':'london', 'day':'today'})
 
-grammar = CFG_Grammar("file:travel.fcfg")
+class TravelGrammar(SimpleGenGrammar, CFG_Grammar):
+    def generateMove(self, move):
+        try:
+            assert isinstance(move, Answer)
+            prop = move.content
+            assert isinstance(prop, Prop)
+            assert prop.pred.content == "price"
+            return "The price is " + str(prop.ind.content)
+        except:
+            return super(TravelGrammar, self).generateMove(move)
+
+grammar = TravelGrammar()
+grammar.loadGrammar("file:travel.fcfg")
+grammar.addForm('Ask("?x.how(x)")', "How do you want to travel?")
+grammar.addForm('Ask("?x.dest_city(x)")', "Where do you want to go?")
+grammar.addForm('Ask("?x.depart_city(x)")', "From where are you leaving?")
+grammar.addForm('Ask("?x.depart_day(x)")', "When do you want to leave?")
+grammar.addForm('Ask("?x.return_day(x)")', "When do you want to return?")
+grammar.addForm('Ask("?x.class(x)")', "First or second class?")
+grammar.addForm('Ask("?return()")', "Do you want a return ticket?")
 
 ibis = IBIS1(domain, database, grammar)
 

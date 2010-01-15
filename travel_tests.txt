@@ -1,67 +1,67 @@
 --- price query with short answers as dialogue moves
 *
-S> 'Greet'()
+S> Hello.
 U> Ask("?x.price(x)")
-S> Ask("?x.how(x)")
+S> How do you want to travel?
 U> Answer("how(plane)")
-S> Ask("?x.dest_city(x)")
+S> Where do you want to go?
 U> Answer("london")
-S> Ask("?x.depart_city(x)")
+S> From where are you leaving?
 U> Answer("paris")
-S> Ask("?x.depart_day(x)")
+S> When do you want to leave?
 U> Answer("today")
-S> Ask("?x.class(x)")
+S> First or second class?
 U> Answer("first")
-S> Ask("?return()")
+S> Do you want a return ticket?
 U> Answer("yes")
-S> Ask("?x.return_day(x)")
+S> When do you want to return?
 U> Answer("tomorrow")
-S> Answer(Prop((Pred1('price'), Ind(345), True)))
+S> The price is 345.
 *
 
 --- price query with short answers as text
 *
-S> 'Greet'()
+S> Hello.
 U> price
-S> Ask("?x.how(x)")
+S> How do you want to travel?
 U> plane
-S> Ask("?x.dest_city(x)")
+S> Where do you want to go?
 U> london
-S> Ask("?x.depart_city(x)")
+S> From where are you leaving?
 U> paris
-S> Ask("?x.depart_day(x)")
+S> When do you want to leave?
 U> today
-S> Ask("?x.class(x)")
+S> First or second class?
 U> first
-S> Ask("?return()")
+S> Do you want a return ticket?
 U> yes
-S> Ask("?x.return_day(x)")
+S> When do you want to return?
 U> tomorrow
-S> Answer(Prop((Pred1('price'), Ind(345), True)))
+S> The price is 345.
 *
 
 --- negative understanding of user input
 *
-S> 'Greet'()
+S> Hello.
 U> sdf sdfsdfsdf
-S> icm:per*pos:'sdf sdfsdfsdf', icm:neg*sem
+S> I heard you say sdf sdfsdfsdf. I don't understand.
 U> price
-S> Ask("?x.how(x)")
+S> How do you want to travel?
 U> dfg dfgdfgdfg
-S> icm:per*pos:'dfg dfgdfgdfg', icm:neg*sem, Ask("?x.how(x)")
+S> I heard you say dfg dfgdfgdfg. I don't understand. How do you want to travel?
 U>
-S> Ask("?x.how(x)")
+S> How do you want to travel?
 *
 
 --- empty user utterances
 *
-S> 'Greet'()
+S> Hello.
 U>
 U>
 U> Ask("?x.price(x)")
-S> Ask("?x.how(x)")
+S> How do you want to travel?
 U>
-S> Ask("?x.how(x)")
+S> How do you want to travel?
 U> Answer("how(plane)")
-S> Ask("?x.dest_city(x)")
+S> Where do you want to go?
 *

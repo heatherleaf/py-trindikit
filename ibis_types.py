@@ -342,9 +342,6 @@ class ICM(Move):
     contentclass = object
     
     def __init__(self, level, polarity, icm_content=None):
-        self.level = level
-        self.polarity = polarity
-        self.icm_content = icm_content
         self.content = (level, polarity, icm_content)
 
     def __str__(self):
@@ -352,6 +349,13 @@ class ICM(Move):
         if self.icm_content:
             s += ":'" + self.icm_content + "'"
         return s
+
+    @property
+    def level(self): return self.content[0]
+    @property
+    def polarity(self): return self.content[1]
+    @property
+    def icm_content(self): return self.content[2]
 
 ######################################################################
 # IBIS plan constructors

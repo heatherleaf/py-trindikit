@@ -29,7 +29,7 @@ from nltk import *
 class CFG_Grammar(Grammar):
     """CFG parser based on NLTK."""
     
-    def __init__(self, grammarFilename):
+    def loadGrammar(self, grammarFilename):
         self.parser = parse.load_parser(grammarFilename, trace=1, cache=False)
 
     def interpret(self, input):

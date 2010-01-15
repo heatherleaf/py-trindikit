@@ -33,11 +33,23 @@ class Grammar(object):
     
     Override generate and interpret if you want to use a real grammar.
     """
-    
+
     def generate(self, moves):
         """Generate a surface string from a set of dialogue moves."""
-        return ", ".join(str(move) for move in moves)
-    
+        return self.joinPhrases(self.generateMove(move) for move in moves)
+
+    def generateMove(self, move):
+        return str(move)
+
+    def joinPhrases(self, phrases):
+        str = ""
+        for p in phrases:
+            if str != "": str += " "
+            str += p
+            if not (p[-1] == "." or p[-1] == "?" or p[-1] == "!"):
+                str += "."
+        return str
+
     def interpret(self, input):
         """Parse an input string into a dialogue move or a set of moves."""
         try: return eval(input)
@@ -47,6 +59,37 @@ class Grammar(object):
         try: return Answer(Ans(input))
         except: pass
         return None
+
+######################################################################
+# Simple generation grammar
+######################################################################
+
+class SimpleGenGrammar(Grammar):
+    def __init__(self):
+        self.forms = dict()
+        self.addForm("'Greet'()", 'Hello')
+        self.addForm("icm:neg*sem", 'I don\'t understand')
+
+    def addForm(self, move, output):
+        self.forms[move] = output
+
+    def generateMove(self, move):
+        try: output = self.generateICM(move)
+        except:
+            s = str(move)
+            try: output = self.forms[s]
+            except KeyError: output = s
+        return output
+
+    def generateICM(self, move):
+        assert isinstance(move, ICM)
+        try: return self.generateIcmPerPos(move)
+        except: raise
+
+    def generateIcmPerPos(self, icm):
+        assert icm.level == "per"
+        assert icm.polarity == "pos"
+        return "I heard you say " + icm.icm_content
 
 ######################################################################
 # IBIS database

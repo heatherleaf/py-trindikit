@@ -58,5 +58,38 @@ class IbisTests(unittest.TestCase):
         self.assertFalse(self.domain.relevant(ans.content, que))
 
 
+    def test_resolves(self):
+        # Y/N questions
+        que = Question("?return()")
+
+        ans = Answer("yes")
+        self.assertTrue(self.domain.resolves(ans.content, que))
+        
+        ans = Answer("no")
+        self.assertTrue(self.domain.resolves(ans.content, que))
+
+        ans = Answer("paris")
+        self.assertFalse(self.domain.resolves(ans.content, que))
+
+
+        # WHQ questions
+        que = Question("?x.dest_city(x)")
+
+        ans = Answer(ShortAns(Ind('paris'), True)) # "paris"
+        self.assertTrue(self.domain.resolves(ans.content, que))
+
+        ans = Answer(ShortAns(Ind('paris'), False)) # "not paris"
+        self.assertFalse(self.domain.resolves(ans.content, que))
+
+        ans = Answer("dest_city(paris)")
+        self.assertTrue(self.domain.resolves(ans.content, que))
+
+        ans = Answer(ShortAns(Ind('five'), True)) # "five"
+        self.assertFalse(self.domain.resolves(ans.content, que))
+
+        ans = Answer(ShortAns(Ind('five'), False)) # "not five"
+        self.assertFalse(self.domain.resolves(ans.content, que))
+
+
 if __name__ == '__main__':
     unittest.main()

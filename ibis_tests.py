@@ -24,26 +24,39 @@ class IbisTests(unittest.TestCase):
 
     domain = Domain(preds0, preds1, sorts)
 
+
     def test_relevant(self):
-        ans = Answer("yes")
+        # Y/N questions
         que = Question("?return()")
+
+        ans = Answer("yes")
         self.assertTrue(self.domain.relevant(ans.content, que))
         
         ans = Answer("no")
-        que = Question("?return()")
         self.assertTrue(self.domain.relevant(ans.content, que))
 
         ans = Answer("paris")
-        que = Question("?return()")
         self.assertFalse(self.domain.relevant(ans.content, que))
 
-        ans = Answer("paris")
+
+        # WHQ questions
         que = Question("?x.dest_city(x)")
+
+        ans = Answer(ShortAns(Ind('paris'), True)) # "paris"
         self.assertTrue(self.domain.relevant(ans.content, que))
 
-        ans = Answer("paris")
-        que = Question("?x.price(x)")
+        ans = Answer(ShortAns(Ind('paris'), False)) # "not paris"
+        self.assertTrue(self.domain.relevant(ans.content, que))
+
+        ans = Answer("dest_city(paris)")
+        self.assertTrue(self.domain.relevant(ans.content, que))
+
+        ans = Answer(ShortAns(Ind('five'), True)) # "five"
         self.assertFalse(self.domain.relevant(ans.content, que))
+
+        ans = Answer(ShortAns(Ind('five'), False)) # "not five"
+        self.assertFalse(self.domain.relevant(ans.content, que))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -91,5 +91,33 @@ class IbisTests(unittest.TestCase):
         self.assertFalse(self.domain.resolves(ans.content, que))
 
 
+    def test_combine(self):
+        # Y/N questions
+        que = Question("?return()")
+
+        ans = Answer("yes")
+        res = Prop(Pred0('return'), None, True)
+        self.assertEqual(self.domain.combine(que, ans.content), res)
+
+        ans = Answer("no")
+        res = Prop(Pred0('return'), None, False)
+        self.assertEqual(self.domain.combine(que, ans.content), res)
+
+
+        # WHQ questions
+        que = Question("?x.dest_city(x)")
+
+        ans = Answer(ShortAns(Ind('paris'), True)) # "paris"
+        res = Prop(Pred1('dest_city'), Ind('paris'), True)
+        self.assertEqual(self.domain.combine(que, ans.content), res)
+
+        ans = Answer(ShortAns(Ind('paris'), False)) # "not paris"
+        res = Prop(Pred1('dest_city'), Ind('paris'), False)
+        self.assertEqual(self.domain.combine(que, ans.content), res)
+
+        ans = Answer("dest_city(paris)")
+        res = Prop(Pred1('dest_city'), Ind('paris'), True)
+        self.assertEqual(self.domain.combine(que, ans.content), res)
+
 if __name__ == '__main__':
     unittest.main()

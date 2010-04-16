@@ -108,15 +108,15 @@ class IbisTests(unittest.TestCase):
         que = Question("?x.dest_city(x)")
 
         ans = Answer("paris")
-        res = Prop(Pred1('dest_city'), Ind('paris'), True)
+        res = Prop("dest_city(paris)")
         self.assertEqual(self.domain.combine(que, ans.content), res)
 
         ans = Answer("-paris")
-        res = Prop(Pred1('dest_city'), Ind('paris'), False)
+        res = Prop("-dest_city(paris)")
         self.assertEqual(self.domain.combine(que, ans.content), res)
 
         ans = Answer("dest_city(paris)")
-        res = Prop(Pred1('dest_city'), Ind('paris'), True)
+        res = Prop("dest_city(paris)")
         self.assertEqual(self.domain.combine(que, ans.content), res)
 
 if __name__ == '__main__':

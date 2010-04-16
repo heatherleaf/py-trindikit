@@ -11,6 +11,21 @@ from ibis import *
 import unittest
 
 class IbisTypesTests(unittest.TestCase):
+    def test_Atomic(self):
+        # integer
+        x = Ind(123)
+        self.assertEquals(x.content, 123)
+        self.assertNotEqual(x.content, "123")
+
+        # string
+        x = Ind("paris")
+        self.assertEquals(x.content, "paris")
+        self.assertRaises(AssertionError, Ind, "1paris")
+        self.assertRaises(AssertionError, Ind, "p!aris")
+        self.assertRaises(AssertionError, Ind, "paris()")
+        x = Ind("paris_france")
+        self.assertRaises(AssertionError, Ind, "_paris")
+
     def test_Question(self):
         # Y/N questions
         q = Question("?return()")

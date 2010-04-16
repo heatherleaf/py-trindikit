@@ -42,19 +42,19 @@ class IbisTests(unittest.TestCase):
         # WHQ questions
         que = Question("?x.dest_city(x)")
 
-        ans = Answer(ShortAns(Ind('paris'), True)) # "paris"
+        ans = Answer("paris")
         self.assertTrue(self.domain.relevant(ans.content, que))
 
-        ans = Answer(ShortAns(Ind('paris'), False)) # "not paris"
+        ans = Answer("-paris")
         self.assertTrue(self.domain.relevant(ans.content, que))
 
         ans = Answer("dest_city(paris)")
         self.assertTrue(self.domain.relevant(ans.content, que))
 
-        ans = Answer(ShortAns(Ind('five'), True)) # "five"
+        ans = Answer("five")
         self.assertFalse(self.domain.relevant(ans.content, que))
 
-        ans = Answer(ShortAns(Ind('five'), False)) # "not five"
+        ans = Answer("-five")
         self.assertFalse(self.domain.relevant(ans.content, que))
 
 
@@ -75,19 +75,19 @@ class IbisTests(unittest.TestCase):
         # WHQ questions
         que = Question("?x.dest_city(x)")
 
-        ans = Answer(ShortAns(Ind('paris'), True)) # "paris"
+        ans = Answer("paris")
         self.assertTrue(self.domain.resolves(ans.content, que))
 
-        ans = Answer(ShortAns(Ind('paris'), False)) # "not paris"
+        ans = Answer("-paris")
         self.assertFalse(self.domain.resolves(ans.content, que))
 
         ans = Answer("dest_city(paris)")
         self.assertTrue(self.domain.resolves(ans.content, que))
 
-        ans = Answer(ShortAns(Ind('five'), True)) # "five"
+        ans = Answer("five")
         self.assertFalse(self.domain.resolves(ans.content, que))
 
-        ans = Answer(ShortAns(Ind('five'), False)) # "not five"
+        ans = Answer("-five")
         self.assertFalse(self.domain.resolves(ans.content, que))
 
 
@@ -107,11 +107,11 @@ class IbisTests(unittest.TestCase):
         # WHQ questions
         que = Question("?x.dest_city(x)")
 
-        ans = Answer(ShortAns(Ind('paris'), True)) # "paris"
+        ans = Answer("paris")
         res = Prop(Pred1('dest_city'), Ind('paris'), True)
         self.assertEqual(self.domain.combine(que, ans.content), res)
 
-        ans = Answer(ShortAns(Ind('paris'), False)) # "not paris"
+        ans = Answer("-paris")
         res = Prop(Pred1('dest_city'), Ind('paris'), False)
         self.assertEqual(self.domain.combine(que, ans.content), res)
 

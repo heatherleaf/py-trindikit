@@ -72,10 +72,21 @@ class IbisTypesTests(unittest.TestCase):
     def test_Prop(self):
         p = Prop("return()")
         self.assertEquals(p.pred, Pred0("return"))
+        self.assertEquals(p.yes, True)
+
+        p = Prop("-return()")
+        self.assertEquals(p.pred, Pred0("return"))
+        self.assertEquals(p.yes, False)
 
         p = Prop("dest_city(paris)")
         self.assertEquals(p.pred, Pred1("dest_city"))
         self.assertEquals(p.ind, Ind("paris"))
+        self.assertEquals(p.yes, True)
+
+        p = Prop("-dest_city(paris)")
+        self.assertEquals(p.pred, Pred1("dest_city"))
+        self.assertEquals(p.ind, Ind("paris"))
+        self.assertEquals(p.yes, False)
 
     def test_Question(self):
         # Y/N questions

@@ -333,7 +333,7 @@ class Ask(Move):
     contentclass = Question
 
     def __str__(self):
-        return 'Ask("%s")' % self.content.__str__()
+        return "Ask('%s')" % self.content.__str__()
 
 class Answer(Move): 
     contentclass = Ans
@@ -367,14 +367,26 @@ class PlanConstructor(Type):
 class Respond(PlanConstructor): 
     contentclass = Question
 
+    def __str__(self):
+        return "Respond('%s')" % self.content.__str__()
+
 class ConsultDB(PlanConstructor):
     contentclass = Question
+
+    def __str__(self):
+        return "ConsultDB('%s')" % self.content.__str__()
 
 class Findout(PlanConstructor):
     contentclass = Question
 
+    def __str__(self):
+        return "Findout('%s')" % self.content.__str__()
+
 class Raise(PlanConstructor):
     contentclass = Question
+
+    def __str__(self):
+        return "Raise('%s')" % self.content.__str__()
 
 # Complex plan constructs
 
@@ -404,3 +416,7 @@ class If(PlanConstructor):
         for m in self.iffalse:
             m._typecheck(context)
 
+    def __str__(self):
+        return "If('%s', %s, %s)" % (self.cond.__str__(),
+                                     self.iftrue.__str__(),
+                                     self.iffalse.__str__())

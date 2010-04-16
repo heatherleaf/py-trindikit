@@ -71,19 +71,23 @@ class IbisTypesTests(unittest.TestCase):
 
     def test_Prop(self):
         p = Prop("return()")
+        self.assertEquals(str(p), "return()")
         self.assertEquals(p.pred, Pred0("return"))
         self.assertEquals(p.yes, True)
 
         p = Prop("-return()")
+        self.assertEquals(str(p), "-return()")
         self.assertEquals(p.pred, Pred0("return"))
         self.assertEquals(p.yes, False)
 
         p = Prop("dest_city(paris)")
+        self.assertEquals(str(p), "dest_city(paris)")
         self.assertEquals(p.pred, Pred1("dest_city"))
         self.assertEquals(p.ind, Ind("paris"))
         self.assertEquals(p.yes, True)
 
         p = Prop("-dest_city(paris)")
+        self.assertEquals(str(p), "-dest_city(paris)")
         self.assertEquals(p.pred, Pred1("dest_city"))
         self.assertEquals(p.ind, Ind("paris"))
         self.assertEquals(p.yes, False)
@@ -91,22 +95,26 @@ class IbisTypesTests(unittest.TestCase):
     def test_Question(self):
         # Y/N questions
         q = Question("?return()")
+        self.assertEquals(str(q), "?return()")
         self.assertEquals(type(q), YNQ)
         self.assertEquals(q.prop.pred, Pred0("return"))
         self.assertEquals(q.prop.yes, True)
 
         q = Question("?-return()")
+        self.assertEquals(str(q), "?-return()")
         self.assertEquals(type(q), YNQ)
         self.assertEquals(q.prop.pred, Pred0("return"))
         self.assertEquals(q.prop.yes, False)
 
         q = Question("?dest_city(paris)")
+        self.assertEquals(str(q), "?dest_city(paris)")
         self.assertEquals(type(q), YNQ)
         self.assertEquals(q.prop.pred, Pred1("dest_city"))
         self.assertEquals(q.prop.ind, Ind("paris"))
         self.assertEquals(q.prop.yes, True)
 
         q = Question("?-dest_city(paris)")
+        self.assertEquals(str(q), "?-dest_city(paris)")
         self.assertEquals(type(q), YNQ)
         self.assertEquals(q.prop.pred, Pred1("dest_city"))
         self.assertEquals(q.prop.ind, Ind("paris"))
@@ -114,6 +122,7 @@ class IbisTypesTests(unittest.TestCase):
 
         # WHQ questions
         q = Question("?x.dest_city(x)")
+        self.assertEquals(str(q), "?x.dest_city(x)")
         self.assertEquals(type(q), WhQ)
         self.assertEquals(q.pred, Pred1("dest_city"))
 
@@ -126,15 +135,19 @@ class IbisTypesTests(unittest.TestCase):
 
     def test_PlanConstructor(self):
         x = Respond("?return()")
+        self.assertEquals(str(x), "Respond('?return()')")
         self.assertEquals(type(x.content), YNQ)
         
         x = ConsultDB("?return()")
+        self.assertEquals(str(x), "ConsultDB('?return()')")
         self.assertEquals(type(x.content), YNQ)
         
         x = Findout("?return()")
+        self.assertEquals(str(x), "Findout('?return()')")
         self.assertEquals(type(x.content), YNQ)
         
         x = Raise("?return()")
+        self.assertEquals(str(x), "Raise('?return()')")
         self.assertEquals(type(x.content), YNQ)
 
         x = If("?return()", [Findout("?x.return_day(x)")])

@@ -96,11 +96,11 @@ class IbisTests(unittest.TestCase):
         que = Question("?return()")
 
         ans = Answer("yes")
-        res = Prop(Pred0('return'), None, True)
+        res = Prop("return()")
         self.assertEqual(self.domain.combine(que, ans.content), res)
 
         ans = Answer("no")
-        res = Prop(Pred0('return'), None, False)
+        res = Prop("-return()")
         self.assertEqual(self.domain.combine(que, ans.content), res)
 
 

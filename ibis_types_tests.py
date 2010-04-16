@@ -26,6 +26,27 @@ class IbisTypesTests(unittest.TestCase):
         x = Ind("paris_france")
         self.assertRaises(AssertionError, Ind, "_paris")
 
+    def test_Ans(self):
+        # proposition
+        ans = Ans("city(paris)")
+        self.assertEquals(type(ans), Prop)
+        self.assertEquals(ans.pred, Pred1("city"))
+        self.assertEquals(ans.ind.content, "paris")
+
+        # short answer
+        ans = Ans("paris")
+        self.assertEquals(type(ans), ShortAns)
+        self.assertEquals(ans.ind.content, "paris")
+
+        # Y/N answer
+        ans = Ans("yes")
+        self.assertEquals(type(ans), YesNo)
+        self.assertEquals(ans.yes, True)
+
+        ans = Ans("no")
+        self.assertEquals(type(ans), YesNo)
+        self.assertEquals(ans.yes, False)
+
     def test_Question(self):
         # Y/N questions
         q = Question("?return()")

@@ -65,5 +65,23 @@ class IbisTypesTests(unittest.TestCase):
         self.assertEquals(q.ynqs[0], YNQ("city(paris)"))
         self.assertEquals(q.ynqs[1], YNQ("city(london)"))
 
+    def test_PlanConstructor(self):
+        x = Respond("?return()")
+        self.assertEquals(type(x.content), YNQ)
+        
+        x = ConsultDB("?return()")
+        self.assertEquals(type(x.content), YNQ)
+        
+        x = Findout("?return()")
+        self.assertEquals(type(x.content), YNQ)
+        
+        x = Raise("?return()")
+        self.assertEquals(type(x.content), YNQ)
+
+        x = If("?return()", [Findout("?x.return_day(x)")])
+        self.assertEquals(x.cond, YNQ("return()"))
+        self.assertEquals(x.iftrue, tuple([Findout("?x.return_day(x)")]))
+        self.assertEquals(x.iffalse, ())
+
 if __name__ == '__main__':
     unittest.main()

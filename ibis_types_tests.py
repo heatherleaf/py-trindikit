@@ -93,6 +93,24 @@ class IbisTypesTests(unittest.TestCase):
         q = Question("?return()")
         self.assertEquals(type(q), YNQ)
         self.assertEquals(q.prop.pred, Pred0("return"))
+        self.assertEquals(q.prop.yes, True)
+
+        q = Question("?-return()")
+        self.assertEquals(type(q), YNQ)
+        self.assertEquals(q.prop.pred, Pred0("return"))
+        self.assertEquals(q.prop.yes, False)
+
+        q = Question("?dest_city(paris)")
+        self.assertEquals(type(q), YNQ)
+        self.assertEquals(q.prop.pred, Pred1("dest_city"))
+        self.assertEquals(q.prop.ind, Ind("paris"))
+        self.assertEquals(q.prop.yes, True)
+
+        q = Question("?-dest_city(paris)")
+        self.assertEquals(type(q), YNQ)
+        self.assertEquals(q.prop.pred, Pred1("dest_city"))
+        self.assertEquals(q.prop.ind, Ind("paris"))
+        self.assertEquals(q.prop.yes, False)
 
         # WHQ questions
         q = Question("?x.dest_city(x)")
